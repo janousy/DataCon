@@ -12,11 +12,13 @@ from bokeh.models import ColumnDataSource, HoverTool,FactorRange,CustomJS
 ## T1.1 Read online .csv file into a dataframe using pandas
 # Reference links: 
 # https://pandas.pydata.org/pandas-docs/stable/reference/frame.html
-# https://stackoverflow.com/questions/55240330/how-to-read-csv-file-from-github-using-pandas 
+# https://stackoverflow.com/questions/55240330/how-to-read-csv-file-from-github-using-pandas
 
-original_url = 'https://github.com/daenuprobst/covid19-cases-switzerland/blob/master/demographics_switzerland_bag.csv'
-df = pd.read_csv(...)
-# print(data.head())
+#original_url = 'https://github.com/daenuprobst/covid19-cases-switzerland/blob/master/demographics_switzerland_bag.csv'
+#changed URL to raw view
+original_url = 'https://raw.githubusercontent.com/daenuprobst/covid19-cases-switzerland/master/demographics_switzerland_bag.csv'
+df = pd.read_csv(original_url)
+#print(df.head(5))
 
 
 ## T1.2 Prepare data for a grouped vbar_stack plot
@@ -25,33 +27,42 @@ df = pd.read_csv(...)
 
 
 # Filter out rows containing 'CH' 
-df = ...
-# print(df.head())
+df = df[df.canton != 'CH']
+#print(df.head(5))
+
 
 # Extract unique value lists of canton, age_group and sex
-canton = ...
-# print(canton)
-age_group = ...
-# print(age_group)
-sex = ...
-# print(sex)
-
+canton = df.canton.unique()
+#print(canton)
+age_group = df.age_group.unique()
+#print(age_group)
+sex = df.sex.unique()
+#print(sex)
 
 # Create a list of categories in the form of [(canton1,age_group1), (canton2,age_group2), ...]
-factors = ...
+factors = []
+for c in canton:
+    for a in age_group:
+        factors.append((c,a))
+#print(factors)
 
 # Use genders as stack names
 stacks = ['male','female']
 
-# Calculate total population size as the value for each stack identified by canton,age_group and sex
-stack_val = ...
+# Calculate total population size as the value for each stack identified by canton,age_group and sex stack_val
+stack_val = [];
+stack_val = df.groupby(['canton','age_group','sex']).sum()
+print(stack_val.head(100))
 
 # Build a ColumnDataSource using above information
-source = ...
+source = ColumnDataSource(data=dict(
+    x=factors,
+    male=stack_val[stack_val.sex='Männlich'],
+    female=stack_val[stack_val.sex='Weiblich'],
+))
 
 
-
-
+"""
 ### Task 2: Data Visualization
 
 
@@ -80,7 +91,4 @@ show(p)
 
 
 
-## T2.3 Save the plot as "dvc_ex1.html" using output_file
-
-
-
+## T2.3 Save the plot as "dvc_ex1.html" using output_file """
