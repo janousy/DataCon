@@ -55,12 +55,13 @@ print(dnc_avg.head())
 # NOTE: be careful with the format of date when it is used as x input for a plot
 cantons = raw.columns.tolist()
 date = raw.index.values.tolist()
+date = pd.to_datetime(date)
 print(cantons)
 print(date)
 
 
 # Create a color list to represent different cantons in the plot, you can either construct your own color patette or use the Bokeh color pallete
-color_palette = bp.Blues8
+color_palette = bp.Category20c[10]
 
 # Build a dictionary with date and each canton name as a key, i.e., {'date':[], 'AG':[], ..., 'ZH':[]}
 # For each canton, the value is a list containing the averaged daily new cases
@@ -85,28 +86,26 @@ p.title.text = 'Daily New Cases in Switzerland'
 
 lines = []
 for canton,color in zip(cantons,color_palette): 
-	glyph = Line(x="x", y="y", line_color=color, line_width=1)
-	p.add_glyph(source, glyph)
-	#lines.append(Line(x="x", y="y", line_color=color, line_width=1))
+	#lines.append()
+	p.line(date, dnc_avg[canton], line_width=2, color=color, alpha=1, legend_label=canton)
 
-'''
+
 # Make the legend of the plot clickable, and set the click_policy to be "hide"
-...
-
-
+p.legend.location = "top_left"
+p.legend.click_policy="hide"
 
 ## T2.2 Add hovering tooltips to display date, canton and averaged daily new case
 
 # (Hovertip doc) https://docs.bokeh.org/en/latest/docs/user_guide/tools.html#hovertool
 # (Date hover)https://stackoverflow.com/questions/41380824/python-bokeh-hover-date-time
-hover = ...
-
-
+hover = HoverTool(
+    tooltips=[("date", "$date"),
+              ("canton", "$canton"),
+              ("population", "@x")])
+              
 p.add_tools(hover)
 
-'''
 show(p)
-'''
+
 output_file("dvc_ex2.html")
 save(p)
-'''
