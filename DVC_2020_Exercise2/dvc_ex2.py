@@ -41,9 +41,9 @@ print(dnc.head(10))
 # Smooth daily new case by the average value in a rolling window, and the window size is defined by step
 # Why do we need smoothing? How does the window size affect the result?
 # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rolling.html
-#TODO: find out why smoothing is required
+#TODO: find out why smoothing is required, check mean() again
 step = 3
-dnc_avg = dnc.rolling(step).sum()
+dnc_avg = dnc.rolling(step).mean()
 dnc_avg = dnc_avg.fillna(0)
 print(dnc_avg.head())
 
@@ -61,14 +61,14 @@ print(date)
 
 # Create a color list to represent different cantons in the plot, you can either construct your own color patette or use the Bokeh color pallete
 #TODO: adjust color palette
-color_palette = bp.Viridis256  
+color_palette = bp.magma(26)
 
 # Build a dictionary with date and each canton name as a key, i.e., {'date':[], 'AG':[], ..., 'ZH':[]}
 # For each canton, the value is a list containing the averaged daily new cases
 source_dict = {}
 source_dict["date"] = date
 for canton in cantons:
-	source_dict[canton] = dnc[canton].values.tolist()
+	source_dict[canton] = dnc_avg[canton]
 
 # print(source_dict)
 source = ColumnDataSource(data=source_dict)
@@ -100,14 +100,14 @@ p.legend.click_policy = "hide"
 # (Hovertip doc) https://docs.bokeh.org/en/latest/docs/user_guide/tools.html#hovertool
 # (Date hover)https://stackoverflow.com/questions/41380824/python-bokeh-hover-date-time
 hover = HoverTool(
-	     tooltips=[
-			#TODO: adjust date formatting
-			("date", "@date"), 
-			("canton", "$name"),
-			("cases", "@y")
-		],
-		formatters={'date': 'datetime'}
+         tooltips=[
+            ('date', '@x{%F}'), 
+            ("canton", "$name"),
+            ("cases", "@y")
+        ],
+        formatters={'@x': 'datetime'}
 )
+
 p.add_tools(hover)
 
 show(p)
