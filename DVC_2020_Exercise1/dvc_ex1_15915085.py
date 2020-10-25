@@ -92,6 +92,7 @@ hover = HoverTool(
     tooltips=[("gender", "$name"),
               ("canton, age group", "@x"),
               ("population", "@$name")])
+              
 p.add_tools(hover)
 show(p)
 p.add_tools(hover)

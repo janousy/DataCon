@@ -61,7 +61,7 @@ print(date)
 
 # Create a color list to represent different cantons in the plot, you can either construct your own color patette or use the Bokeh color pallete
 #TODO: adjust color palette
-color_palette = bp.magma(26)
+color_palette = list(bp.magma(26))
 
 # Build a dictionary with date and each canton name as a key, i.e., {'date':[], 'AG':[], ..., 'ZH':[]}
 # For each canton, the value is a list containing the averaged daily new cases
@@ -86,7 +86,6 @@ p.title.text = 'Daily New Cases in Switzerland'
 
 lines = []
 for canton, color in zip(cantons, color_palette):
-	# lines.append(...)
 	p.line(date, dnc_avg[canton], line_width=2,
 	       color=color, alpha=1, legend_label=canton, name=canton)
 
