@@ -72,7 +72,8 @@ canton_point = local_raw.groupby(['abbreviation_canton','lat','long']).size().re
 case_raw = pd.read_csv(case_url)
 #print(case_raw.head(5))
 # Create a date list from case_raw and convert to datatime form
-dates = pd.to_datetime(case_raw['Date']).tolist()
+dates_raw = list(case_raw.Date)
+dates = pd.to_datetime(dates_raw)
 #print(dates)
 
 
@@ -94,16 +95,19 @@ canton_poly = shape_raw[['geometry','Canton']]
 
 # Potential issue: 
 # https://stackoverflow.com/questions/57045479/is-there-a-way-to-fix-maximum-recursion-level-in-python-3
-merged = demo_raw.merge(canton_poly, on='Canton')
-merged = merged.merge(canton_point, left_on='Canton', right_on='abbreviation_canton')
+#merged = canton_poly.merge(demo_raw, how="left", on="Canton")
+#merged = merged.merge(canton_point, how="left", left_on="Canton", right_on="abbreviation_canton")
 #print(merged)
+
+merged = canton_poly.merge(demo_raw, how="left", on="Canton")
+merged = merged.merge(canton_point, how="left", left_on="Canton", right_on="abbreviation_canton")
 
 # For each date, extract a list of daily new cases per capita from all cantons(e.g. 'AG_diff_pc', 'AI_diff_pc', etc.), and add as a new column in merged
 # For instance, in the column['2020-10-31'], there are: [0.0005411327220155498, nan, nan, 0.000496300306803826, ...]
-dpc = case_raw.loc[:, case_raw.columns.str.contains('diff_pc')].drop(columns='CH_diff_pc')
-for i,d in enumerate(dates):
-	dnc = dpc.iloc[i].tolist()
-	merged[d] = dnc
+
+for i,d in enumerate(dates_raw):
+	dnc = case_raw.loc[[i]].filter(regex=(".*_diff_pc")).values
+	merged[d] = dnc[0][:-1]
 
 # Calculate circle sizes that are proportional to dnc per capita
 # Set the latest dnc as default 
@@ -112,8 +116,7 @@ merged['dnc'] = merged.iloc[:,-1]
 
 # Build a GeoJSONDataSource from merged
 geosource = GeoJSONDataSource(geojson=merged.to_json())
-
-print(merged)
+print(geosource)
 
 '''
 # Task 2: Data Visualization
