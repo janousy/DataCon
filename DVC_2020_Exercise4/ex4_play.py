@@ -204,8 +204,10 @@ def animate_update_slider():
 	date = timeslider.value
 	# Subtract one day from date and do not exceed the allowed date range
 	day =  date - timedelta(days=1)
-	
-	#handle out of range
+	# Handle out of range
+	if not day in dates:
+		day = dates[-1]
+	# Update timeslide value
 	timeslider.value = day
 
 # Define the callback function of button
