@@ -95,10 +95,6 @@ canton_poly = shape_raw[['geometry','Canton']]
 
 # Potential issue: 
 # https://stackoverflow.com/questions/57045479/is-there-a-way-to-fix-maximum-recursion-level-in-python-3
-#merged = canton_poly.merge(demo_raw, how="left", on="Canton")
-#merged = merged.merge(canton_point, how="left", left_on="Canton", right_on="abbreviation_canton")
-#print(merged)
-
 merged = canton_poly.merge(demo_raw, how="left", on="Canton")
 merged = merged.merge(canton_point, how="left", left_on="Canton", right_on="abbreviation_canton")
 
@@ -106,19 +102,18 @@ merged = merged.merge(canton_point, how="left", left_on="Canton", right_on="abbr
 # For instance, in the column['2020-10-31'], there are: [0.0005411327220155498, nan, nan, 0.000496300306803826, ...]
 
 for i,d in enumerate(dates_raw):
-	dnc = case_raw.loc[[i]].filter(regex=(".*_diff_pc")).values
+	dnc = case_raw.loc[[i],:].filter(regex=(".*_diff_pc")).values
 	merged[d] = dnc[0][:-1]
 
 # Calculate circle sizes that are proportional to dnc per capita
 # Set the latest dnc as default 
 merged['size'] = merged.iloc[:,-1]*1e5/5+10
-merged['dnc'] = merged.iloc[:,-1]
+merged['dnc'] = merged.iloc[:,-2]
 
 # Build a GeoJSONDataSource from merged
 geosource = GeoJSONDataSource(geojson=merged.to_json())
-print(geosource)
 
-'''
+
 # Task 2: Data Visualization
 
 # T2.1 Create linear color mappers for 2 attributes in demo_raw: population density, hospital beds per capita 
@@ -126,9 +121,8 @@ print(geosource)
 labels = ['Density','BedsPerCapita']
 
 mappers = {} 
-mappers['Density'] = ...
-mappers['BedsPerCapita'] = ...
-
+mappers['Density'] = linear_cmap(field_name='Density',palette=bp.inferno(256)[::-1], low=min(demo_raw.Density), high=max(demo_raw.Density))
+mappers['BedsPerCapita'] = linear_cmap(field_name='BedsPerCapita',palette=bp.inferno(256)[::-1], low=demo_raw.BedsPerCapita.min(), high=demo_raw.BedsPerCapita.max())
 
 # T2.2 Draw a Switzerland Map on canton level
 
@@ -143,42 +137,43 @@ p1.xgrid.grid_line_color = None
 p1.ygrid.grid_line_color = None
 
 # Plot the map using patches, set the fill_color as mappers['Density']
-cantons = p1.patches(...)
+cantons = p1.patches(xs="xs", ys="ys", fill_color=mappers['Density'], source=geosource, line_width=0.25,fill_alpha=0.5)
 
 
 # Create a colorbar with mapper['Density'] and add it to above figure
-color_bar = ColorBar(...)
+color_bar = ColorBar(color_mapper=mappers['Density']['transform'], width=16, location=(0,0), title="Density")
 p1.add_layout(color_bar, 'right')
 
 
 # Add a hovertool to display canton, density, bedspercapita and dnc 
-hover = HoverTool(tooltips=[...] ,renderers=[cantons])
+hover = HoverTool(tooltips=[("canton", "@Canton"),("Populationd Density", "@Density"),("BedsPerCapita", "@BedsPerCapita"),("Daily New Cases per Capita", "@dnc"),] ,renderers=[cantons])
 
 p1.add_tools(hover)
 
 
-
 # T2.3 Add circles at the locations of capital cities for each canton, and the sizes are proportional to daily new cases per capita
-sites = p1.circle(...)
+sites = p1.circle('long', 'lat', source=geosource, color='blue', size='size', alpha=0.5)
 
 
 # T2.4 Create a radio button group with labels 'Density', and 'BedsPerCapita'
-buttons = RadioButtonGroup(...)
+buttons = RadioButtonGroup(labels=['Density', 'BedPerCapita'],active=0)
 
 # Define a function to update color mapper used in both patches and colorbar 
 def update_bar(new):
 	for i,d in enumerate(labels):
 		if i == new:
-			...
+			color_bar.color_mapper = mappers[d]["transform"]
+			color_bar.title = d
+			cantons.glyph.fill_color = mappers[d] # d is either 'Density' or 'BedsPerCapita'
 
 
-buttons.on_click(...)
+buttons.on_click(update_bar)
 
 
 # T2.5 Add a dateslider to control which per capita daily new cases information to display
 
 # Define a dateslider using maximum and mimimum dates, set value to be the latest date
-timeslider = DateSlider(...)
+timeslider = DateSlider(title='Date',start=dates.min(), end=dates.max(), value=dates.max())
 
 # Complete the callback function 
 # Hints: 
@@ -189,16 +184,14 @@ timeslider = DateSlider(...)
 def callback(attr,old,new):
 	# Convert timestamp to datetime
 	# https://stackoverflow.com/questions/9744775/how-to-convert-integer-timestamp-to-python-datetime
-	date = ...
-	i = date.strftime('%Y-%m-%d')
-
-	merged.size = ...
-	merged.dnc = ...
-	geosource.geojson = ...
-
+	#date = datetime.fromtimestamp(new)
+	i = new.strftime('%Y-%m-%d')
+	merged.size = merged[i]*1e5/5+10
+	merged.dnc = merged[i]
+	geosource.geojson = merged.to_json()
 
 # Circles change on mouse move
-timeslider.on_change(...)
+timeslider.on_change('value', callback)
 
 
 # T2.6 Add a play button to change slider value and update the map plot dynamically
@@ -208,12 +201,11 @@ timeslider.on_change(...)
 # Update the slider value with one day before current date
 def animate_update_slider():
 	# Extract date from slider's current value 
-	date = ...
+	date = timeslider.value
 	# Subtract one day from date and do not exceed the allowed date range
-	day = ...
-
-	...
-
+	day =  date - timedelta(days=1)
+	
+	#handle out of range
 	timeslider.value = day
 
 # Define the callback function of button
@@ -229,8 +221,5 @@ def animate():
 button = Button(label='► Play', width=80, height=40)
 button.on_click(animate)
 
-
-
-
 curdoc().add_root(column(p1,buttons, row(timeslider,button)))
-'''
+
