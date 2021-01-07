@@ -34,7 +34,9 @@ from bokeh.models import (CDSView,
 
 # ====================================================================
 
+# Run using: bokeh serve --show ex4_play.py
 
+# ====================================================================
 
 ### Task 1: Data Preprocessing
 
@@ -156,8 +158,8 @@ sites = p1.circle('long', 'lat', source=geosource, color='blue', size='size', al
 
 
 # T2.4 Create a radio button group with labels 'Density', and 'BedsPerCapita'
-buttons = RadioButtonGroup(labels=['Density', 'BedPerCapita'],active=0)
-
+buttons = RadioButtonGroup(labels=['Density', 'BedsPerCapita'],active=0)
+ 
 # Define a function to update color mapper used in both patches and colorbar 
 def update_bar(new):
 	for i,d in enumerate(labels):
